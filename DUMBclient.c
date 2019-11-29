@@ -10,6 +10,16 @@
 #include <netdb.h>
 #include <signal.h>
 
+void commands(){
+    printf("%s\n", "quit");
+    printf("%s\n", "create");
+    printf("%s\n", "delete");
+    printf("%s\n", "open");
+    printf("%s\n", "close");
+    printf("%s\n", "next");
+    printf("%s\n", "put");
+}
+
 int main(int argc, const char * argv[]) {
 //    quit            (which causes: E.1 GDBYE)
 //    create        (which causes: E.2 CREAT)
@@ -28,7 +38,7 @@ int main(int argc, const char * argv[]) {
     printf("%d\n", port_num);
     
 
-    int sock;
+    int sock = 0;
     if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     {
         printf("\n Socket creation error \n");   //handle error
@@ -36,8 +46,8 @@ int main(int argc, const char * argv[]) {
     }
     
     struct hostent *host = gethostbyname(hostname);
-    if (host == NULL){ //TODO error
-        printf("hostname error\n");
+    if (host == NULL){
+        printf("hostname error\n"); //handle error
         return 0;
         
     }
@@ -50,19 +60,32 @@ int main(int argc, const char * argv[]) {
     serv_addr.sin_port = htons(port_num);
     serv_addr.sin_addr = *(struct in_addr* )* host->h_addr_list;
 
-    
-    
-    if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
-    {
-        printf("\nConnection Failed \n");
-        return -1;
+    if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0){
+        printf("\nConnection Failed \n"); //handle error
     }
-    else printf("connecting...\n");
+    
+    int  valread;
+    char *hello = "HELLO";
+    char buffer[1024] = {0};
+    int i;
+    for(i=0; i<3; ++i){ //try to connect for three time
+        send(sock , hello , strlen(hello) , 0 ); //send(int socket, const void *buffer, size_t length, int flags);
+        valread = read(sock , buffer, 1024);  //read(int fildes, void *buf, size_t nbyte);
+        if(strcmp(buffer, "HELLO DUMBv0 ready!") == 0){
+            break;
+        }
+        else{
+            if(i==2){printf("Connection Failes\n"); return 0;} //should shutdown
+            else{continue;}
+        }
+    }
+    
+    printf("Please enter a command from the command list below: ");
+    commands();
+    char input[20];
+    scanf("%s\n", input);
     
     
     
-//    int num;
-//    printf("Enter the integer: ");
-//    scanf("%d", &num);
     return 0;
 }
