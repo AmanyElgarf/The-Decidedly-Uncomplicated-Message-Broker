@@ -13,7 +13,7 @@
 ///TODO --> EDIT NUMBERS AND CAPACITIES LATER AFTER TESTING THAT ALL COMMANDS WORK
 
 
-
+//TODO--> ERROR HANDLING, add isValidCommandFunction
 //if(strlen(name) < 5 || strlen(name) > 25 || !isalpha(name[0])){
 //    printf("Error. The name must be 5 to 25 characters long and start with an alphabetic character");
 //    return;
