@@ -16,6 +16,9 @@ int server_sock;
 int port_num;
 struct sockaddr_in server_address;
 
+pthread_t* threads;
+pthread_mutex_t lock;
+
 struct clientParams
 {
 	int client_id;
@@ -280,8 +283,8 @@ void initServer(int port)
 		error("Error binding socket\n");
 	 }
 
-	 //listen for connections, max connections = 5
-	 listen(server_sock,5);
+	 //listen for connections, max connections = 1000
+	 listen(server_sock, 1000);
 }
 
 int isValidName(char* name)
@@ -408,6 +411,7 @@ void* initClient(void* params)
 		 if (client_sock < 0)
 		 {
 			printf("Error while accepting client socket.\n");
+			if (openBox != NULL) openBox -> opened = 0;
 			pthread_exit(NULL);
 		 }
 
@@ -418,6 +422,7 @@ void* initClient(void* params)
 		 if (n <= 0)
 		 {
 			printf("Error reading from socket %s\n", ip);
+			if (openBox != NULL) openBox -> opened = 0;
 			pthread_exit(NULL);
 		 }
 
@@ -431,17 +436,25 @@ void* initClient(void* params)
 		 }
 
 		 //get command and argument
-		 char cmd[256] = "";
-		 char arg[256] = "";
-		 char arg3[256] = "";
+		 char cmd[256] = "\0";
+		 char arg[256] = "\0";
+		 char arg3[256] = "\0";
 
 		 //get name of command and first arg
-		 char* cur = strtok(buffer, " \n");
-		 strcpy(cmd, cur);
-		 cur = (cur == NULL) ? NULL : strtok(NULL, " \n");
-		 if (cur != NULL) strcpy(arg, cur);
-		 cur = (cur == NULL) ? NULL : strtok(NULL, " \n");
-		 if (cur != NULL) strcpy(arg3, cur);
+		 if (strncmp(buffer, "PUTMG", 5) == 0)
+		 {
+			 char* cur = strtok(buffer, "\n");
+			 strcpy(cmd, cur);
+		 }
+		 else
+		 {
+			 char* cur = strtok(buffer, " \n");
+			 strcpy(cmd, cur);
+			 cur = (cur == NULL) ? NULL : strtok(NULL, " \n");
+			 if (cur != NULL) strcpy(arg, cur);
+			 cur = (cur == NULL) ? NULL : strtok(NULL, " \n");
+			 if (cur != NULL) strcpy(arg3, cur);
+		 }
 
 		 //check for no 3rd argument
 		 if (strcmp(arg3, "") != 0)
@@ -483,10 +496,17 @@ void* initClient(void* params)
 
 			//close client socket
 			close(client_sock);
+			if (openBox != NULL) openBox -> opened = 0;
 			pthread_exit(NULL);
 		 }
 		 else if (strcmp(cmd, "CREAT") == 0)
 		 {
+			 //get the current message box
+			 struct MessagesNode* cur_box = NULL;
+			 pthread_mutex_lock(&lock);
+			 cur_box = getMessageBox(m, arg);
+			 pthread_mutex_unlock(&lock);
+
 			//check if name of message box is valid
 			if (!isValidName(arg))
 			{
@@ -495,7 +515,7 @@ void* initClient(void* params)
 				n = write(client_sock, errmsg, 8);
 			}
 			//check if message box name already exists
-			else if (getMessageBox(m, arg) != NULL)
+			else if (cur_box != NULL)
 			{
 				errorMsg(errmsg, "EXIST");
 				printToServer(0, client_sock, ip, errmsg);
@@ -504,7 +524,9 @@ void* initClient(void* params)
 			//else, create message box
 			else
 			{
+				pthread_mutex_lock(&lock);
 				addMessageBox(m, arg);
+				pthread_mutex_unlock(&lock);
 				n = write(client_sock, sucmsg, 3);
 
 				//report success
@@ -515,7 +537,9 @@ void* initClient(void* params)
 		 {
 		 	//get the current message box
 			struct MessagesNode* cur_box = NULL;
+			pthread_mutex_lock(&lock);
 			cur_box = getMessageBox(m, arg);
+			pthread_mutex_unlock(&lock);
 
 			//check if name of message box is valid
 			if (!isValidName(arg))
@@ -541,7 +565,9 @@ void* initClient(void* params)
 			//open the message box
 			else
 			{
+				pthread_mutex_lock(&lock);
 				cur_box -> opened = 1;
+				pthread_mutex_unlock(&lock);
 				openBox = cur_box;
 				n = write(client_sock, sucmsg, 3);
 				printToServer(1, client_sock, ip, cmd);
@@ -577,11 +603,15 @@ void* initClient(void* params)
 			//get the next message from the msgbox queue
 			else
 			{
+				pthread_mutex_lock(&lock);
 				cur_msg_node = dequeue(openBox -> msgbox);
+				pthread_mutex_unlock(&lock);
 				strcat(cur_msg, "OK!");
 				cur_msg_len += 3;
 
+				pthread_mutex_lock(&lock);
 				int curlen = strlen(cur_msg_node -> msg);
+				pthread_mutex_unlock(&lock);
 				char curnum[4];
 				intToString(curlen, curnum);
 
@@ -591,7 +621,9 @@ void* initClient(void* params)
 				strcat(cur_msg, "!");
 				cur_msg_len += 1;
 
+				pthread_mutex_lock(&lock);
 				strcat(cur_msg, cur_msg_node -> msg);
+				pthread_mutex_unlock(&lock);
 				cur_msg_len += curlen;
 
 				//free the dequeue'd node
@@ -606,6 +638,7 @@ void* initClient(void* params)
 		 }
 		 else if (strstr(cmd, "PUTMG"))
 		 {
+			/*
 		 	//check if expression is well formed and only has 1 parameter
 			if (strcmp(arg, "") != 0)
 			{
@@ -614,6 +647,7 @@ void* initClient(void* params)
 				n = write(client_sock, errmsg, 8);
 				continue;
 			}
+			*/
 			//break up the command into 3 parts, make sure it has atleast 2 '!' to be valid
 			int num_exclamations = 0;
 			int i;
@@ -622,7 +656,7 @@ void* initClient(void* params)
 			}
 
 			//if less than 2 ! marks, this is not well formed. OR if we had more than 1 parameter
-			if (num_exclamations < 2 || cur != NULL) {
+			if (num_exclamations < 2) {
 				errorMsg(errmsg, "WHAT?");
 				printToServer(0, client_sock, ip, errmsg);
 				n = write(client_sock, errmsg, 8);
@@ -687,7 +721,9 @@ void* initClient(void* params)
 			//else, let us add the message
 			else
 			{
+				pthread_mutex_lock(&lock);
 				enqueue(openBox -> msgbox, cur_msg);
+				pthread_mutex_unlock(&lock);
 				char success_msg[261] = "";
 				strcat(success_msg, "OK!");
 				strcat(success_msg, num_bytes);
@@ -703,6 +739,7 @@ void* initClient(void* params)
 		 {
 		 	//get the current message box
 			struct MessagesNode* cur_box = NULL;
+			pthread_mutex_lock(&lock);
 			cur_box = getMessageBox(m, arg);
 
 			//check if name of message box is valid
@@ -745,12 +782,15 @@ void* initClient(void* params)
 				//report success
 				printToServer(1, client_sock, ip, cmd);
 			}
+			pthread_mutex_unlock(&lock);
 		 }
 		 else if (strcmp(cmd, "CLSBX") == 0)
 		 {
 		 	//get the current message box
 			struct MessagesNode* cur_box = NULL;
+			pthread_mutex_lock(&lock);
 			cur_box = getMessageBox(m, arg);
+			pthread_mutex_unlock(&lock);
 
 			//check if name of message box is valid
 			if (!isValidName(arg))
@@ -776,7 +816,9 @@ void* initClient(void* params)
 			//close the message box
 			else
 			{
+				pthread_mutex_lock(&lock);
 				cur_box -> opened = 0;
+				pthread_mutex_unlock(&lock);
 				openBox = NULL;
 				n = write(client_sock, sucmsg, 3);
 
@@ -795,6 +837,7 @@ void* initClient(void* params)
 		 if (n < 0)
 		 {
 			printf("Error writing to socket\n");
+			if (openBox != NULL) openBox -> opened = 0;
 			pthread_exit(NULL);
 		 }
 
@@ -823,6 +866,10 @@ void freeAllMemory()
 	}
 
 	freeMessages(m);
+
+	pthread_mutex_destroy(&lock);
+
+	free(threads);
 }
 
 void exitServer(int sig_num)
@@ -830,6 +877,7 @@ void exitServer(int sig_num)
 		printf("\nExiting server... freeing all allocated memory\n");
     freeAllMemory();
 		printf("Successfully ended server\n");
+		close(server_sock);
 		exit(0);
 }
 
@@ -861,6 +909,9 @@ int main(int argc, char** argv)
 
 	 initServer(atoi(argv[1]));
 
+	 threads = (pthread_t*) malloc(sizeof(pthread_t)*1000);
+	 int num_threads = 0;
+
 	 while (1)
 	 {
 		 //vars to set up client socket
@@ -885,8 +936,7 @@ int main(int argc, char** argv)
 		p -> client_id = client_sock;
 		strcpy(p -> ip, str);
 
-		 pthread_t thread;
-		 pthread_create(&thread, NULL, initClient, (void*)p);
+		 pthread_create(&threads[num_threads++], NULL, initClient, (void*)p);
 	 }
 
 	 	//printMessageSys(m);
