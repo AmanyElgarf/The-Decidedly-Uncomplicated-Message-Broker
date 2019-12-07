@@ -209,7 +209,7 @@ void put(int sock, char* msg){
     }
 }
 
-void delete(int sock, char* name){
+void deletee(int sock, char* name){
     int valread;
     char buffer[256] = {0};
     char send_to_server[35] = "DELBX ";
@@ -338,7 +338,7 @@ int main(int argc, char const *argv[])
             char name[26];
             fgets(name, 26, stdin);
             name[strcspn(name, "\n")] = '\0';
-            delete(sock, name);
+            deletee(sock, name);
         }
         else if(strcmp(input, "open") == 0){
             printf("Okay, open which message box?\n");
