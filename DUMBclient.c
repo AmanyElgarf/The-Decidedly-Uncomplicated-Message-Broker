@@ -10,6 +10,8 @@
 #include <netdb.h>
 #include <signal.h>
 
+#include "DUMBclient.h"
+
 static int open = 0;
 int isValidCommand(char * name){
     if(strlen(name) < 5 || strlen(name) > 25 || !isalpha(name[0])){
