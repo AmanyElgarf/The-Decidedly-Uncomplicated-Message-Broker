@@ -11,7 +11,7 @@
 #include <arpa/inet.h>
 #include <signal.h>
 
-#include "DUMBserver."
+#include "DUMBserver.h"
 
 //vars to set up server socket
 int server_sock;
