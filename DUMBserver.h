@@ -1,4 +1,5 @@
 #ifndef _DUMBserver_H
+#define _DUMBserver_H
 /* Queue functions */
 struct Queue* createQueue();
 int isEmpty(struct Queue* q);
@@ -32,4 +33,4 @@ void printToServer(int success, int id, char* ip, char* msg);
 void freeAllMemory();
 void exitServer(int sig_num);
 
-#define _DUMBserver_H
+#endif
