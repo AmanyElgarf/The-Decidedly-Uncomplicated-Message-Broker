@@ -1,10 +1,10 @@
-all:	serve client 
+all:	serve client
 
-client: 
+client:
 	gcc -w -o DUMBclient DUMBclient.c
 
 serve:
-	gcc -w -o DUMBserve DUMBserver.c -pthread
+	gcc -w -o DUMBserve DUMBserver.c -lpthread
 
 clean:
 	rm -f DUMBclient DUMBserve
