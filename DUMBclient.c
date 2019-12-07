@@ -12,7 +12,9 @@
 
 #include "DUMBclient.h"
 
-static int open = 0;
+static int open = 0; //static varia
+
+//function to check if the box name is correct
 int isValidCommand(char * name){
     if(strlen(name) < 5 || strlen(name) > 25 || !isalpha(name[0])){
         printf("Error. The name must be 5 to 25 characters long and start with an alphabetic character\n");
@@ -21,7 +23,7 @@ int isValidCommand(char * name){
     return 1;
 }
 
-
+//help function to print all the available command to the user
 void commands(){
     printf("Please choose a command from the command list below: \n");
     printf("%s\n", "1. quit");
@@ -33,6 +35,8 @@ void commands(){
     printf("%s\n", "7. put");
 }
 
+
+//function to close the connection between the client and the server
 int quit(int sock){
     int valread;
     char buffer[256] = {0};
@@ -49,7 +53,7 @@ int quit(int sock){
     }
 }
 
-
+//function to create a new box
 void create(int sock, char *name){
     int valread;
     char buffer[256] = {0};
@@ -73,6 +77,7 @@ void create(int sock, char *name){
     }
 }
 
+//function to open an existing box;
 void openBox(int sock, char *name){
 	
     int valread;
@@ -107,6 +112,7 @@ void openBox(int sock, char *name){
     
 }
 
+//function to print out the next message in the box
 void next(int sock){
     int valread;
     char buffer[1000] = {0};
@@ -131,7 +137,7 @@ void next(int sock){
     }
 }
 
-
+//function to get a substring from a main string
 int  getSubString(char *source, char *target,int from, int to)
 {
 	int length=0;
@@ -158,6 +164,7 @@ int  getSubString(char *source, char *target,int from, int to)
 	return 0;	
 }
 
+//function to put a message inside a box
 void put(int sock, char* msg){
 
 	
@@ -206,6 +213,7 @@ void put(int sock, char* msg){
     }
 }
 
+//function to delete an existing box
 void deletee(int sock, char* name){
     int valread;
     char buffer[256] = {0};
@@ -236,6 +244,7 @@ void deletee(int sock, char* name){
     
 }
 
+//function to close a bix that is opened
 void closeBox(int sock, char* name){
 	
     int valread;
@@ -261,6 +270,7 @@ void closeBox(int sock, char* name){
     }
 }
 
+
 int main(int argc, char const *argv[])
 {
     if (argc < 3)
@@ -269,8 +279,8 @@ int main(int argc, char const *argv[])
         return -1;
     }
     
-    char* hostname = argv[1];
-    int PORT = atoi(argv[2]);
+    char* hostname = argv[1];  //retrieve the hostname
+    int PORT = atoi(argv[2]); //retrieve the port number
     int sock, valread;
     struct sockaddr_in serv_addr;
     
@@ -306,7 +316,7 @@ int main(int argc, char const *argv[])
     }
     
     commands();
-    char input[1000];
+    char input[1000]; 
     while(1){
         bzero(input, sizeof(input));
         fflush(stdin);
