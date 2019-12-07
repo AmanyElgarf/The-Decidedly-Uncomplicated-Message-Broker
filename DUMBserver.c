@@ -11,6 +11,8 @@
 #include <arpa/inet.h>
 #include <signal.h>
 
+#include "DUMBserver."
+
 //vars to set up server socket
 int server_sock;
 int port_num;
@@ -893,19 +895,7 @@ int main(int argc, char** argv)
 	m = initMessageSys();
 
 
-	signal(SIGINT, exitServer);
-	/* test
-	addMessageBox(m, "message1");
-	struct MessagesNode* mbox = getMessageBox(m, "message1");
-
-	if (mbox != NULL)
-	{
-    enqueue(mbox -> msgbox, "Hey there!");
-	enqueue(mbox -> msgbox, "sup man!");
-	enqueue(mbox -> msgbox, "i am good at C");
-	enqueue(mbox -> msgbox, "just kidding");
-	}
-	*/
+	 signal(SIGINT, exitServer);
 
 	 initServer(atoi(argv[1]));
 
