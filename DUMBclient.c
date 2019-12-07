@@ -53,7 +53,7 @@ int quit(int sock){
 void create(int sock, char *name){
     int valread;
     char buffer[256] = {0};
-    char send_to_server[256] = "CREAT ";
+    char send_to_server[1000] = "CREAT ";
     strcat(send_to_server, name);
     write(sock, send_to_server ,strlen(send_to_server));
     valread = read(sock, buffer, 255);
@@ -77,7 +77,7 @@ void openBox(int sock, char *name){
 	
     int valread;
     char buffer[256] = {0};
-    char send_to_server[256] = "OPNBX ";
+    char send_to_server[1000] = "OPNBX ";
     strcat(send_to_server, name);
     write(sock, send_to_server ,strlen(send_to_server));
     valread = read(sock, buffer, 255);
@@ -163,9 +163,6 @@ void put(int sock, char* msg){
 	
     int valread;
     char buffer[256] = {0};
-
-    
-    //char buff[264];
     
     char send_to_server[273] = "PUTMG!";
     
@@ -212,7 +209,7 @@ void put(int sock, char* msg){
 void deletee(int sock, char* name){
     int valread;
     char buffer[256] = {0};
-    char send_to_server[35] = "DELBX ";
+    char send_to_server[1000] = "DELBX ";
     strcat(send_to_server, name);
     write(sock, send_to_server ,strlen(send_to_server));
     valread = read(sock, buffer, 255);
@@ -242,11 +239,11 @@ void deletee(int sock, char* name){
 void closeBox(int sock, char* name){
 	
     int valread;
-    char buffer[256] = {0};
-    char send_to_server[255] = "CLSBX ";
+    char buffer[1000] = {0};
+    char send_to_server[999] = "CLSBX ";
     strcat(send_to_server, name);
     write(sock, send_to_server ,strlen(send_to_server));
-    valread = read(sock, buffer, 255);
+    valread = read(sock, buffer, 999);
     if(strcmp(buffer, "OK!") ==0){
 		open = 0;
         printf("Successfully closed\n");
@@ -309,11 +306,11 @@ int main(int argc, char const *argv[])
     }
     
     commands();
-    char input[26];
+    char input[1000];
     while(1){
         bzero(input, sizeof(input));
         fflush(stdin);
-        fgets(input, 26, stdin);
+        fgets(input, 1000, stdin);
         input[strcspn(input, "\n")] = '\0';
         if(strcmp(input, "quit") == 0){
             int i = quit(sock);
@@ -326,33 +323,33 @@ int main(int argc, char const *argv[])
             printf("%s\n", "Okay, enter the name of the box");
             printf("%s", "create:> ");
             fflush(stdin);
-            char name[26];
+            char name[1000];
             bzero(name, sizeof(name));
-            fgets(name, 26, stdin);
+            fgets(name, 1000, stdin);
             name[strcspn(name, "\n")] = '\0';
             fflush(stdin);
             create(sock, name);
         }
         else if(strcmp(input, "delete") == 0){
             printf("Okay, enter the name of the box\n");
-            char name[26];
-            fgets(name, 26, stdin);
+            char name[1000];
+            fgets(name, 1000, stdin);
             name[strcspn(name, "\n")] = '\0';
             deletee(sock, name);
         }
         else if(strcmp(input, "open") == 0){
             printf("Okay, open which message box?\n");
-            char name[26];
+            char name[1000];
             printf("%s", "open:> ");
             fflush(stdin);
-            fgets(name, 26, stdin);
+            fgets(name, 1000, stdin);
             name[strcspn(name, "\n")] = '\0';
             openBox(sock, name);
         }
         else if(strcmp(input, "close") == 0){
             printf("Okay, close which message box?\n");
-            char name[26];
-            fgets(name, 26, stdin);
+            char name[1000];
+            fgets(name, 1000, stdin);
             name[strcspn(name, "\n")] = '\0';
             closeBox(sock, name);
         }
@@ -361,10 +358,10 @@ int main(int argc, char const *argv[])
         }
         else if(strcmp(input, "put") == 0){
             printf("Okay, enter the message you want to put in the box.\n");
-            char msg[1000];
+            char msg[10000];
             printf("%s", "put:> ");
             fflush(stdin);
-            fgets(msg, 1000, stdin);
+            fgets(msg, 10000, stdin);
             msg[strcspn(msg, "\n")] = '\0';
             put(sock, msg);
         }
