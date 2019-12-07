@@ -33,7 +33,7 @@ struct Messages* m;
 /* Data Structures */
 struct MessagesNode
 {
-	char msgbox_name[26]; //a message box name must be between 5 - 25 chars, 26 including null terminator
+	char msgbox_name[40]; //a message box name must be between 5 - 25 chars, 26 including null terminator
 	struct Queue* msgbox;
 	struct MessagesNode* next;
 	int opened;
@@ -47,7 +47,7 @@ struct Messages
 //Node data structure
 struct Node
 {
-	char msg[256];
+	char msg[500];
 	struct Node* next;
 };
 
@@ -399,14 +399,14 @@ void* initClient(void* params)
 	char openmsg[25] = "connected";
 	printToServer(1, client_sock, ip, openmsg);
 	//vars
-	char buffer[256];
+	char buffer[500];
 	int n;
 
 	//keeps track of if we currently have a box opened
 	struct MessagesNode* openBox = NULL;
 
-	char errmsg[256] = "";
-	char sucmsg[256] = "OK!";
+	char errmsg[500] = "";
+	char sucmsg[500] = "OK!";
 
 	while (1)
 	{
@@ -417,8 +417,8 @@ void* initClient(void* params)
 			pthread_exit(NULL);
 		 }
 
-		 bzero(buffer,256);
-		 n = read(client_sock,buffer,255);
+		 bzero(buffer,500);
+		 n = read(client_sock,buffer,499);
 
 		 //check for read error
 		 if (n <= 0)
@@ -438,9 +438,9 @@ void* initClient(void* params)
 		 }
 
 		 //get command and argument
-		 char cmd[256] = "\0";
-		 char arg[256] = "\0";
-		 char arg3[256] = "\0";
+		 char cmd[500] = "\0";
+		 char arg[500] = "\0";
+		 char arg3[500] = "\0";
 
 		 //get name of command and first arg
 		 if (strncmp(buffer, "PUTMG", 5) == 0)
@@ -466,7 +466,7 @@ void* initClient(void* params)
 			n = write(client_sock, errmsg, 9);
 			continue;
 		 }
-
+		 
 		 //start the client-server connection
 		 if (strcmp(cmd, "HELLO") == 0)
 		 {
@@ -666,8 +666,8 @@ void* initClient(void* params)
 			}
 
 			 //number of bytes and string message
-			 char num_bytes[20] = "";
-			 char cur_msg[257] = "";
+			 char num_bytes[50] = "";
+			 char cur_msg[500] = "";
 			 int num_bytes_int = 0;
 
 			 /*
@@ -726,7 +726,7 @@ void* initClient(void* params)
 				pthread_mutex_lock(&lock);
 				enqueue(openBox -> msgbox, cur_msg);
 				pthread_mutex_unlock(&lock);
-				char success_msg[261] = "";
+				char success_msg[500] = "";
 				strcat(success_msg, "OK!");
 				strcat(success_msg, num_bytes);
 				n = write(client_sock, success_msg, strlen(success_msg));
