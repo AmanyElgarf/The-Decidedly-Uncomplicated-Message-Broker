@@ -47,7 +47,7 @@ struct Messages
 //Node data structure
 struct Node
 {
-	char msg[500];
+	char* msg;
 	struct Node* next;
 };
 
@@ -76,7 +76,9 @@ int isEmpty(struct Queue* q)
 //add to front of LL
 void enqueue(struct Queue* q, char* str)
 {
+	int n = strlen(str) + 1;
 	struct Node* cur = (struct Node*) malloc(1*sizeof(struct Node));
+	cur -> msg = (char*) malloc(n*sizeof(char));
 
 	//no current Nodes in LL
 	if (isEmpty(q))
@@ -399,7 +401,7 @@ void* initClient(void* params)
 	char openmsg[25] = "connected";
 	printToServer(1, client_sock, ip, openmsg);
 	//vars
-	char buffer[500];
+	char buffer[5000];
 	int n;
 
 	//keeps track of if we currently have a box opened
@@ -417,8 +419,8 @@ void* initClient(void* params)
 			pthread_exit(NULL);
 		 }
 
-		 bzero(buffer,500);
-		 n = read(client_sock,buffer,499);
+		 bzero(buffer,5000);
+		 n = read(client_sock,buffer,4999);
 
 		 //check for read error
 		 if (n <= 0)
@@ -438,9 +440,9 @@ void* initClient(void* params)
 		 }
 
 		 //get command and argument
-		 char cmd[500] = "\0";
-		 char arg[500] = "\0";
-		 char arg3[500] = "\0";
+		 char cmd[5000] = "\0";
+		 char arg[5000] = "\0";
+		 char arg3[5000] = "\0";
 
 		 //get name of command and first arg
 		 if (strncmp(buffer, "PUTMG", 5) == 0)
@@ -466,7 +468,7 @@ void* initClient(void* params)
 			n = write(client_sock, errmsg, 9);
 			continue;
 		 }
-		 
+
 		 //start the client-server connection
 		 if (strcmp(cmd, "HELLO") == 0)
 		 {
@@ -541,7 +543,6 @@ void* initClient(void* params)
 			struct MessagesNode* cur_box = NULL;
 			pthread_mutex_lock(&lock);
 			cur_box = getMessageBox(m, arg);
-			pthread_mutex_unlock(&lock);
 
 			//check if name of message box is valid
 			if (!isValidName(arg))
@@ -557,8 +558,14 @@ void* initClient(void* params)
 				printToServer(0, client_sock, ip, errmsg);
 				n = write(client_sock, errmsg, 8);
 			}
+			else if (openBox != NULL)
+			{
+				errorMsg(errmsg, "CUROP");
+				printToServer(0, client_sock, ip, errmsg);
+				n = write(client_sock, errmsg, 8);
+			}
 			//check if the message box is already opened OR you already have one opened
-			else if (cur_box -> opened == 1 || openBox != NULL)
+			else if (cur_box -> opened == 1)
 			{
 				errorMsg(errmsg, "OPEND");
 				printToServer(0, client_sock, ip, errmsg);
@@ -567,13 +574,12 @@ void* initClient(void* params)
 			//open the message box
 			else
 			{
-				pthread_mutex_lock(&lock);
 				cur_box -> opened = 1;
-				pthread_mutex_unlock(&lock);
 				openBox = cur_box;
 				n = write(client_sock, sucmsg, 3);
 				printToServer(1, client_sock, ip, cmd);
 			}
+			pthread_mutex_unlock(&lock);
 		 }
 		 else if (strcmp(cmd, "NXTMG") == 0)
 		 {
@@ -614,7 +620,7 @@ void* initClient(void* params)
 				pthread_mutex_lock(&lock);
 				int curlen = strlen(cur_msg_node -> msg);
 				pthread_mutex_unlock(&lock);
-				char curnum[4];
+				char curnum[50];
 				intToString(curlen, curnum);
 
 				strcat(cur_msg, curnum);
@@ -628,7 +634,8 @@ void* initClient(void* params)
 				pthread_mutex_unlock(&lock);
 				cur_msg_len += curlen;
 
-				//free the dequeue'd node
+				//free the dequeue'd node and its message array
+				free(cur_msg_node -> msg);
 				free(cur_msg_node);
 
 				//printf("we sent the client %d bytes", cur_msg_len);
@@ -667,7 +674,7 @@ void* initClient(void* params)
 
 			 //number of bytes and string message
 			 char num_bytes[50] = "";
-			 char cur_msg[500] = "";
+			 char cur_msg[5000] = "";
 			 int num_bytes_int = 0;
 
 			 /*
@@ -851,6 +858,7 @@ void* initClient(void* params)
 
 void freeAllMemory()
 {
+	pthread_mutex_lock(&lock);
 	struct MessagesNode* ptr;
 	struct MessagesNode* next;
 	for (ptr = m -> front; ptr != NULL; ptr = next)
@@ -859,15 +867,18 @@ void freeAllMemory()
 
 		while (!isEmpty(ptr -> msgbox))
 		{
-			free(dequeue(ptr -> msgbox));
+			struct Node* tmp = dequeue(ptr -> msgbox);
+			free(tmp -> msg);
+			free(tmp);
 		}
 
 		freeQueue(ptr -> msgbox);
-
 		free(ptr);
 	}
 
 	freeMessages(m);
+
+	pthread_mutex_unlock(&lock);
 
 	pthread_mutex_destroy(&lock);
 
