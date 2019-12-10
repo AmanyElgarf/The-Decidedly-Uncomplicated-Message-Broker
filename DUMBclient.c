@@ -79,7 +79,7 @@ void create(int sock, char *name){
 
 //function to open an existing box;
 void openBox(int sock, char *name){
-	
+
     int valread;
     char buffer[256] = {0};
     char send_to_server[1000] = "OPNBX ";
@@ -94,12 +94,10 @@ void openBox(int sock, char *name){
         printf("Error. This name doesn't exist\n");
     }
     else if(strcmp(buffer, "ER:OPEND") ==0){
-		if(open == 0){
 			printf("Error. This box is already opened by another user \n");
-		}
-		else{
-			printf("Error. You have a box opened\n");
-			}
+    }
+    else if (strcmp(buffer, "ER:CUROP") ==0){
+      printf("Error. You currently have a box opened\n");
     }
     else if(strcmp(buffer, "ER:WHAT?") ==0){
         if(isValidCommand(name) == 0){
@@ -109,16 +107,16 @@ void openBox(int sock, char *name){
             printf("Error. Your message is in some way broken or malformed\n");
         }
     }
-    
+
 }
 
 //function to print out the next message in the box
 void next(int sock){
     int valread;
-    char buffer[1000] = {0};
+    char buffer[10000] = {0};
     char* send_to_server = "NXTMG";
     write(sock, send_to_server ,strlen(send_to_server));
-    valread = read(sock, buffer, 999);
+    valread = read(sock, buffer, 9999);
     if(strcmp(buffer, "ER:NOOPN") ==0){
         printf("Error. Either the message box not open or doesn't exist\n");
     }
@@ -132,8 +130,8 @@ void next(int sock){
         char *first = strstr(buffer, "!");
 		char *second = strstr(first+1, "!");
 		printf("%s\n", second+1);
- 
-        
+
+
     }
 }
 
@@ -142,66 +140,66 @@ int  getSubString(char *source, char *target,int from, int to)
 {
 	int length=0;
 	int i=0,j=0;
-	
+
 	//get length
 	while(source[i++]!='\0')
 		length++;
-	
+
 	if(from<0 || from>length){
 		return 1;
 	}
 	if(to>length){
 		return 1;
-	}	
-	
+	}
+
 	for(i=from,j=0;i<=to;i++,j++){
 		target[j]=source[i];
 	}
-	
+
 	//assign NULL at the end of string
-	target[j]='\0'; 
-	
-	return 0;	
+	target[j]='\0';
+
+	return 0;
 }
 
 //function to put a message inside a box
 void put(int sock, char* msg){
 
-	
+
     int valread;
     char buffer[256] = {0};
-    
+
     char send_to_server[10000] = "PUTMG!";
-    
-	if(strlen(msg) > 255){
+
+	if(strlen(msg) > 4000){
         printf("Your message was trimmed\n");
-		char newMsg[255] = {0};
-		if(getSubString(msg, newMsg, 0, 254)==0){
-			
+		char newMsg[5000] = {0};
+		if(getSubString(msg, newMsg, 0, 4000)==0){
+
 			int len = strlen(newMsg);
-   			char str[1000];
+   			char str[5000];
    			sprintf(str, "%d", len);
 			strcat(send_to_server, str);
    			strcat(send_to_server, "!");
 			strcat(send_to_server, newMsg);
 		}
 		else{printf("Command failed\n");}
-		
+
     }
     else {
 		int len = strlen(msg);
-    	char str[1000];
+    	char str[5000];
    		sprintf(str, "%d", len);
 		strcat(send_to_server, str);
     	strcat(send_to_server, "!");
 		strcat(send_to_server, msg);
 	}
-	
-    //printf("%s\n", send_to_server); 
+
+    //printf("%s\n", send_to_server);
 	fflush(stdout);
     write(sock, send_to_server ,strlen(send_to_server));
     valread = read(sock, buffer, 255);
-    //printf("%s\n", buffer);  
+    //printf("%s\n", buffer);
     if(strcmp(buffer, "ER:NOOPN") ==0){
         printf("Error. You have no message box open\n");
     }
@@ -241,12 +239,12 @@ void deletee(int sock, char* name){
             printf("Error. Your message is in some way broken or malformed\n");
         }
     }
-    
+
 }
 
 //function to close a bix that is opened
 void closeBox(int sock, char* name){
-	
+
     int valread;
     char buffer[1000] = {0};
     char send_to_server[999] = "CLSBX ";
@@ -278,13 +276,13 @@ int main(int argc, char const *argv[])
         printf("Please enter a host and a port number.\n");
         return -1;
     }
-    
+
     char* hostname = argv[1];  //retrieve the hostname
     int PORT = atoi(argv[2]); //retrieve the port number
     int sock, valread;
     struct sockaddr_in serv_addr;
-    
-    
+
+
     struct hostent *host = gethostbyname(hostname);
     if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     {
@@ -292,18 +290,18 @@ int main(int argc, char const *argv[])
         return -1;
     }
     bzero(&serv_addr, sizeof(serv_addr));
-    
+
     serv_addr.sin_addr = *(struct in_addr* )* host->h_addr_list;
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(PORT);
-    
+
     if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
     {
         printf("\nConnection Failed \n");
         return -1;
     }
-    
-    
+
+
     char buffer[256] = {0};
     char *hello = "HELLO";
 	int i;
@@ -314,9 +312,9 @@ int main(int argc, char const *argv[])
         if(strcmp(buffer, "HELLO DUMBv0 ready!") ==0){printf("Success. You are connected.\n"); break;}
         else{if(i==2){printf("Connection Failed\n"); return -1;}else{continue;}}
     }
-    
+
     commands();
-    char input[1000]; 
+    char input[1000];
     while(1){
         bzero(input, sizeof(input));
         fflush(stdin);
