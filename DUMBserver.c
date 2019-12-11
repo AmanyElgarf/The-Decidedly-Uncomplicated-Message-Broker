@@ -442,7 +442,6 @@ void* initClient(void* params)
 		 //get command and argument
 		 char cmd[5000] = "\0";
 		 char arg[5000] = "\0";
-		 char arg3[5000] = "\0";
 
 		 //get name of command and first arg
 		 if (strncmp(buffer, "PUTMG", 5) == 0)
@@ -452,21 +451,27 @@ void* initClient(void* params)
 		 }
 		 else
 		 {
-			 char* cur = strtok(buffer, " \n");
-			 strcpy(cmd, cur);
-			 cur = (cur == NULL) ? NULL : strtok(NULL, " \n");
-			 if (cur != NULL) strcpy(arg, cur);
-			 cur = (cur == NULL) ? NULL : strtok(NULL, " \n");
-			 if (cur != NULL) strcpy(arg3, cur);
-		 }
-
-		 //check for no 3rd argument
-		 if (strcmp(arg3, "") != 0)
-		 {
-			errorMsg(errmsg, "WHAT?");
-			printToServer(0, client_sock, ip, errmsg);
-			n = write(client_sock, errmsg, 9);
-			continue;
+			 int z = 0;
+			 int y = 0;
+			 int found_space = 0;
+			 while (buffer[z] != '\0' && buffer[z] != '\n')
+			 {
+				 if (!found_space && buffer[z] == ' ') {
+					 found_space = 1;
+					 z++;
+					 continue;
+				 }
+				 if (!found_space)
+				 {
+					 cmd[z] = buffer[z];
+					 z++;
+				 }
+				 else {
+					 arg[y] = buffer[z];
+					 y++;
+					 z++;
+				 }
+			 	}
 		 }
 
 		 //start the client-server connection
